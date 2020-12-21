@@ -24,8 +24,7 @@ class ConnectedPageState extends State<ConnectedPage> {
   void initState() {
     super.initState();
     _controller = TextEditingController();
-    url = ('ws://' +
-        jsonDecode(widget.message)['host'] +
+    url = (jsonDecode(widget.message)['host'] +
         '/' +
         jsonDecode(widget.message)['room']);
     ws = WebsocketManager();
