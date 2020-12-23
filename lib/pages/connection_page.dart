@@ -37,6 +37,7 @@ class ConnectedPageState extends State<ConnectedPage> {
     super.dispose();
   }
 
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
