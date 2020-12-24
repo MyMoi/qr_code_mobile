@@ -1,8 +1,8 @@
-import 'dart:convert';
+/*import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:qr_code_scanner/qr_code_scanner.dart';
+import 'package:send_qr/pages/qr_scanner.dart';
 import 'package:send_qr/network/websocketManager.dart';
 import 'package:send_qr/widgets/history_list.dart';
 
@@ -166,3 +166,4 @@ class ConnectedPageState extends State<ConnectedPage> {
         });
   }
 }
+*/
