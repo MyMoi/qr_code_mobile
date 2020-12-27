@@ -47,10 +47,15 @@ class MessageManager {
   }
 
   void disconnect() {
+    print("mam disconnected;");
     ws.disconnect();
 
-    _updateMessageList.close();
-    _systemEvent.close();
+    // _updateMessageList.close();
+    // _systemEvent.close();
+
+    ws = null;
+    key = null;
+    url = null;
   }
 
   sendText(text) {
