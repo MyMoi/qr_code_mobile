@@ -21,7 +21,7 @@ class MessageManager {
 
   Future<String> connect(_url, _key) {
     // url = "ws://192.168.1.27:8000";
-//        if (room == null) {
+    //        if (room == null) {
     if (url == null) {
       key = aesCrypt.getKeyFromString(keyString: _key);
       url = _url;
@@ -30,16 +30,29 @@ class MessageManager {
       assert(ws != null);
       ws.receiveTextEventStream.listen((message) {
         final decodedMessage = jsonDecode(message);
-        if (decodedMessage['event'] == 'newText') {
-          String decodedText = aesCrypt.decrypt(
-              decodedMessage['body']['content'].toString(),
-              decodedMessage['body']['iv'].toString(),
-              key);
-          messageList.add(decodedText);
-          _updateMessageList.sink.add(decodedText);
-        } else if (decodedMessage['event'] == 'newConnection') {
-          _systemEvent.sink.add('newConnection');
-          print("new connection.");
+        switch (decodedMessage['event']) {
+          case 'newText':
+            {
+              String decodedText = aesCrypt.decrypt(
+                  decodedMessage['body']['content'].toString(),
+                  decodedMessage['body']['iv'].toString(),
+                  key);
+              messageList.add(decodedText);
+              _updateMessageList.sink.add(decodedText);
+            }
+            break;
+          case 'connected':
+            {
+              //_systemEvent.sink.add('newConnection');
+              ws.sendWs(jsonEncode({'event': 'deviceConnected'}));
+              print("connected");
+            }
+            break;
+          default:
+            {
+              print('unknown event');
+            }
+            break;
         }
       });
     }
@@ -66,6 +79,14 @@ class MessageManager {
   _createJsonRequest(event, body) {
     var request = {'event': event, 'body': body};
     return jsonEncode(request);
+  }
+
+  transferSession(String _recipientUrl, String _recipientKeyBase64) {
+    final _key = aesCrypt.getKeyFromString(keyString: _recipientKeyBase64);
+    final _ws = WebsocketManager(_recipientUrl, _key);
+    _ws.sendWs(_createJsonRequest('connectSession',
+        aesCrypt.encrypt(jsonEncode({'url': url, 'key': key.base64}), _key)));
+    _ws.disconnect();
   }
 
   final _updateMessageList = StreamController<String>.broadcast();

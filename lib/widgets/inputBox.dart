@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:send_qr/communication/messageManager.dart';
+import 'package:send_qr/pages/qr_scanner.dart';
 
 class InputBox extends StatefulWidget {
   const InputBox({
@@ -83,6 +86,16 @@ class _InputBoxState extends State<InputBox> {
                     ),
                   ]),
               IconButton(
+                //highlightColor: Colors.redAccent,
+                //hoverColor: Colors.redAccent,
+                //splashColor: Colors.redAccent,
+
+                icon: Icon(Icons.device_hub_outlined),
+                onPressed: () {
+                  _openQrScanner(context);
+                },
+              ),
+              IconButton(
                 onPressed: () {
                   print("value : " + _controller.text);
                   _messageManager.sendText(_controller.text);
@@ -98,5 +111,20 @@ class _InputBoxState extends State<InputBox> {
         ],
       ),
     );
+  }
+
+  _openQrScanner(BuildContext context) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => QRViewExample()),
+    );
+
+    if (result != null) {
+      print("resultaaaa: " + result);
+      final resultMap = jsonDecode(result);
+      //await _messageManager.connect(          resultMap["host"] + '/' + resultMap["room"], resultMap['key']);
+      _messageManager.transferSession(
+          resultMap["host"] + '/' + resultMap["room"], resultMap['key']);
+    }
   }
 }
