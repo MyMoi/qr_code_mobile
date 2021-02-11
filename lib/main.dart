@@ -48,7 +48,10 @@ class MyApp extends StatelessWidget {
       print("resultaaaa: " + result);
       final resultMap = jsonDecode(result);
       await messageManager.connect(
-          resultMap["host"] + '/' + resultMap["room"], resultMap['key']);
+          resultMap["host"],
+          "http://192.168.1.68:3000/upload/",
+          resultMap["room"],
+          resultMap['key']);
 
       Navigator.push(
         context,

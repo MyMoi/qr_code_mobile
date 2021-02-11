@@ -96,6 +96,16 @@ class _InputBoxState extends State<InputBox> {
                 },
               ),
               IconButton(
+                //highlightColor: Colors.redAccent,
+                //hoverColor: Colors.redAccent,
+                //splashColor: Colors.redAccent,
+
+                icon: Icon(Icons.attach_file),
+                onPressed: () {
+                  _messageManager.sendFile();
+                },
+              ),
+              IconButton(
                 onPressed: () {
                   print("value : " + _controller.text);
                   _messageManager.sendText(_controller.text);
