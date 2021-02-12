@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 
@@ -10,24 +13,26 @@ Future uploadFile() async {
   Dio dio = Dio();
 
   if (result != null) {
+    final iv = encrypt.IV.fromSecureRandom(16);
+    print(result.files.single.bytes);
     FormData formData = new FormData.fromMap({
       "file": MultipartFile.fromBytes(
-        await _encryptFile(result.files.single.bytes, _messageManager.key),
+        await _encryptFile(await File(result.files.single.path).readAsBytes(),
+            _messageManager.key, iv),
         filename: "filename",
       ),
     });
     print(result.files.single.path);
-    var response = await dio.post(_messageManager.fileApi,
+    var response = await dio.post(_messageManager.fileUploadApi,
         data: formData, options: Options(contentType: 'multipart/form-data'));
-    print(response);
+    print(response.data['filename']);
+    return {'filename': response.data['filename'], 'iv': iv};
   }
-  return {};
 }
 
-_encryptFile(contentBytes, encrypt.Key key) {
-  final iv = encrypt.IV.fromSecureRandom(16);
+_encryptFile(contentBytes, encrypt.Key key, encrypt.IV iv) {
   final encrypter =
       encrypt.Encrypter(encrypt.AES(key, mode: encrypt.AESMode.cbc));
-  return encrypter.encrypt(contentBytes.toString(), iv: iv).bytes;
+  return encrypter.encryptBytes(contentBytes, iv: iv).bytes;
   //return content.readAsBytes();
 }

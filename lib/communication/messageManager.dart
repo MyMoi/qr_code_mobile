@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:send_qr/communication/encryption.dart' as aesCrypt;
+import 'package:send_qr/messageManagerFunctions/fileDownload.dart';
 import 'package:send_qr/messageManagerFunctions/fileUpload.dart';
 import 'package:send_qr/network/websocketManager.dart';
 
@@ -10,7 +11,7 @@ class MessageManager {
   static final MessageManager _instance = MessageManager._internal();
   WebsocketManager ws;
   String _wsApiUrl;
-  String _fileApiUrl = "http://192.168.1.68:3000/upload/";
+  String _fileApiUrl = "http://192.168.1.68:3000";
 
   String _room;
   var _key;
@@ -50,6 +51,18 @@ class MessageManager {
               //_systemEvent.sink.add('newConnection');
               ws.sendWs(jsonEncode({'event': 'deviceConnected'}));
               print("connected");
+            }
+            break;
+          case 'newFile':
+            {
+              String decodedText = aesCrypt.decrypt(
+                  decodedMessage['body']['content'].toString(),
+                  decodedMessage['body']['iv'].toString(),
+                  _key);
+              messageList.add(decodedText);
+              _updateMessageList.sink.add(decodedText);
+              final mapDecoded = jsonDecode(decodedText);
+              downloadFile(mapDecoded['url'], mapDecoded['iv']);
             }
             break;
           default:
@@ -96,7 +109,16 @@ class MessageManager {
   }
 
   Future sendFile() async {
-    await uploadFile();
+    uploadFile().then((value) {
+      ws.sendWs(_createJsonRequest(
+          'newFile',
+          aesCrypt.encrypt(
+              jsonEncode({
+                'url': (fileDownloadApi + '/' + value['filename']),
+                'iv': value['iv'].base64
+              }),
+              _key)));
+    });
   }
 
   final _updateMessageList = StreamController<String>.broadcast();
@@ -112,6 +134,8 @@ class MessageManager {
   get wsApi => (_wsApiUrl + '/' + _room);
   get key => _key;
   get fileApiUrl => _fileApiUrl;
-  get fileApi => (_fileApiUrl + _room);
+  get fileUploadApi => (_fileApiUrl + '/upload/' + _room);
+  get fileDownloadApi => (_fileApiUrl + '/download/' + _room);
+
   get room => _room;
 }
