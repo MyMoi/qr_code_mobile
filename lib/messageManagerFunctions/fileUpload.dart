@@ -26,7 +26,11 @@ Future uploadFile() async {
     var response = await dio.post(_messageManager.fileUploadApi,
         data: formData, options: Options(contentType: 'multipart/form-data'));
     print(response.data['filename']);
-    return {'filename': response.data['filename'], 'iv': iv};
+    return {
+      'name': response.data['filename'],
+      'iv': iv,
+      'originFilename': result.files.single.name
+    };
   }
 }
 

@@ -47,8 +47,8 @@ class MyApp extends StatelessWidget {
     if (result != null) {
       print("resultaaaa: " + result);
       final resultMap = jsonDecode(result);
-      await messageManager.connect(resultMap["host"],
-          "http://192.168.1.68:3000", resultMap["room"], resultMap['key']);
+      await messageManager.connect(resultMap["wsHost"], resultMap["fileHost"],
+          resultMap["room"], resultMap['key']);
 
       Navigator.push(
         context,

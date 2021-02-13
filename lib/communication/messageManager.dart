@@ -62,7 +62,8 @@ class MessageManager {
               messageList.add(decodedText);
               _updateMessageList.sink.add(decodedText);
               final mapDecoded = jsonDecode(decodedText);
-              downloadFile(mapDecoded['url'], mapDecoded['iv']);
+              downloadFile(
+                  mapDecoded['url'], mapDecoded['iv'], mapDecoded['filename']);
             }
             break;
           default:
@@ -114,8 +115,9 @@ class MessageManager {
           'newFile',
           aesCrypt.encrypt(
               jsonEncode({
-                'url': (fileDownloadApi + '/' + value['filename']),
-                'iv': value['iv'].base64
+                'url': (fileDownloadApi + '/' + value['name']),
+                'iv': value['iv'].base64,
+                'filename': value['originFilename']
               }),
               _key)));
     });
