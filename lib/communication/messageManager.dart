@@ -11,7 +11,7 @@ class MessageManager {
   static final MessageManager _instance = MessageManager._internal();
   WebsocketManager ws;
   String _wsApiUrl;
-  String _fileApiUrl = "http://192.168.1.68:3000";
+  String _fileApiUrl;
 
   String _room;
   var _key;
@@ -29,6 +29,7 @@ class MessageManager {
     if (_wsApiUrl == null) {
       _key = aesCrypt.getKeyFromString(keyString: key);
       _wsApiUrl = wsUrl;
+      _fileApiUrl = fileUrl;
       _room = roomId;
       ws = WebsocketManager(wsApi, _key);
       print('url : ' + _wsApiUrl);
