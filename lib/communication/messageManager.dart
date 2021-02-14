@@ -106,7 +106,13 @@ class MessageManager {
     _ws.sendWs(_createJsonRequest(
         'connectSession',
         aesCrypt.encrypt(
-            jsonEncode({'url': wsApi, 'key': _key.base64}), _tempKey)));
+            jsonEncode({
+              'wsHost': _wsApiUrl,
+              'fileHost': fileApiUrl,
+              'room': room,
+              'key': _key.base64
+            }),
+            _tempKey)));
     _ws.disconnect();
   }
 

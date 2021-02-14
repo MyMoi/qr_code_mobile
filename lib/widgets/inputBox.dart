@@ -134,7 +134,7 @@ class _InputBoxState extends State<InputBox> {
       final resultMap = jsonDecode(result);
       //await _messageManager.connect(          resultMap["host"] + '/' + resultMap["room"], resultMap['key']);
       _messageManager.transferSession(
-          resultMap["host"] + '/' + resultMap["room"], resultMap['key']);
+          resultMap["wsHost"] + '/' + resultMap["room"], resultMap['key']);
     }
   }
 }
