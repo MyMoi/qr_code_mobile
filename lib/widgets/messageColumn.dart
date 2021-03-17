@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:send_qr/communication/messageManager.dart';
+import 'package:send_qr/model/messageClass.dart';
+import 'package:send_qr/widgets/boxFileWidget.dart';
 import 'package:send_qr/widgets/boxTextWidget.dart';
 import 'package:send_qr/widgets/inputBox.dart';
 
@@ -50,10 +52,11 @@ class _MessageColumnState extends State<MessageColumn> {
             return SliverList(
               delegate: SliverChildBuilderDelegate(
                 (BuildContext context, int index) {
-                  return BoxText(
-                    content: _messageManager.messageList[
-                        _messageManager.messageList.length - (index + 1)],
-                  );
+                  final _message = _messageManager.messageList[
+                      _messageManager.messageList.length - (index + 1)];
+                  return (_message.type == MessageType.text)
+                      ? BoxText(content: _message.content)
+                      : BoxFile(content: _message.content);
                 },
                 childCount: _messageManager.messageList.length,
               ),

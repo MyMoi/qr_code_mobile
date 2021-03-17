@@ -2,10 +2,13 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:cryptography/cryptography.dart';
 import 'package:send_qr/communication/encryption.dart' as aesCrypt;
-import 'package:send_qr/messageManagerFunctions/fileDownload.dart';
-import 'package:send_qr/messageManagerFunctions/fileUpload.dart';
+import 'package:send_qr/model/messageClass.dart';
 import 'package:send_qr/network/websocketManager.dart';
+
+import 'messageManagerFunctions/fileDownload.dart';
+import 'messageManagerFunctions/fileUpload.dart';
 
 class MessageManager {
   static final MessageManager _instance = MessageManager._internal();
@@ -14,8 +17,9 @@ class MessageManager {
   String _fileApiUrl;
 
   String _room;
-  var _key;
-  List<String> messageList = [];
+  SecretKey _key;
+  SecretKeyData _keyData;
+  List<Message> messageList = [];
 
   factory MessageManager() => _instance;
 
@@ -23,11 +27,12 @@ class MessageManager {
     print("New instance of Message Manager");
   }
 
-  Future<String> connect(wsUrl, fileUrl, roomId, key) {
+  Future<String> connect(wsUrl, fileUrl, roomId, key) async {
     // url = "ws://192.168.1.27:8000";
     //        if (room == null) {
     if (_wsApiUrl == null) {
-      _key = aesCrypt.getKeyFromString(keyString: key);
+      _key = await aesCrypt.getKeyFromString(keyString: key);
+      _keyData = await _key.extract();
       _wsApiUrl = wsUrl;
       _fileApiUrl = fileUrl;
       _room = roomId;
@@ -39,12 +44,17 @@ class MessageManager {
         switch (decodedMessage['event']) {
           case 'newText':
             {
-              String decodedText = aesCrypt.decrypt(
-                  decodedMessage['body']['content'].toString(),
-                  decodedMessage['body']['iv'].toString(),
-                  _key);
-              messageList.add(decodedText);
-              _updateMessageList.sink.add(decodedText);
+              aesCrypt
+                  .decrypt(
+                      decodedMessage['body']['content'].toString(),
+                      decodedMessage['body']['iv'].toString(),
+                      decodedMessage['body']['mac'].toString(),
+                      _key)
+                  .then((decodedText) {
+                messageList.add(Message(MessageType.text, decodedText));
+
+                _updateMessageList.sink.add(decodedText);
+              });
             }
             break;
           case 'connected':
@@ -56,15 +66,19 @@ class MessageManager {
             break;
           case 'newFile':
             {
-              String decodedText = aesCrypt.decrypt(
-                  decodedMessage['body']['content'].toString(),
-                  decodedMessage['body']['iv'].toString(),
-                  _key);
-              messageList.add(decodedText);
-              _updateMessageList.sink.add(decodedText);
-              final mapDecoded = jsonDecode(decodedText);
-              downloadFile(
-                  mapDecoded['url'], mapDecoded['iv'], mapDecoded['filename']);
+              aesCrypt
+                  .decrypt(
+                      decodedMessage['body']['content'].toString(),
+                      decodedMessage['body']['iv'].toString(),
+                      decodedMessage['body']['mac'].toString(),
+                      _key)
+                  .then((decodedText) {
+                messageList.add(Message(MessageType.file, decodedText));
+                _updateMessageList.sink.add(decodedText);
+                /*           final mapDecoded = jsonDecode(decodedText);
+                downloadFile(mapDecoded['url'], mapDecoded['iv'],
+                    mapDecoded['mac'], mapDecoded['filename']);*/
+              });
             }
             break;
           default:
@@ -90,9 +104,10 @@ class MessageManager {
     _wsApiUrl = null;
   }
 
-  sendText(text) {
+  sendText(text) async {
     if (text != "")
-      ws.sendWs(_createJsonRequest('newText', aesCrypt.encrypt(text, _key)));
+      ws.sendWs(
+          _createJsonRequest('newText', await aesCrypt.encrypt(text, _key)));
   }
 
   _createJsonRequest(event, body) {
@@ -100,30 +115,31 @@ class MessageManager {
     return jsonEncode(request);
   }
 
-  transferSession(String _recipientUrl, String _recipientKeyBase64) {
+  transferSession(String _recipientUrl, String _recipientKeyBase64) async {
     final _tempKey = aesCrypt.getKeyFromString(keyString: _recipientKeyBase64);
     final _ws = WebsocketManager(_recipientUrl, _tempKey);
     _ws.sendWs(_createJsonRequest(
         'connectSession',
-        aesCrypt.encrypt(
+        await aesCrypt.encrypt(
             jsonEncode({
               'wsHost': _wsApiUrl,
               'fileHost': fileApiUrl,
               'room': room,
-              'key': _key.base64
+              'key': base64Encode(keyData.bytes),
             }),
-            _tempKey)));
+            await _tempKey)));
     _ws.disconnect();
   }
 
   Future sendFile() async {
-    uploadFile().then((value) {
+    uploadFile().then((value) async {
       ws.sendWs(_createJsonRequest(
           'newFile',
-          aesCrypt.encrypt(
+          await aesCrypt.encrypt(
               jsonEncode({
                 'url': (fileDownloadApi + '/' + value['name']),
-                'iv': value['iv'].base64,
+                'iv': value['iv'],
+                'mac': value['mac'],
                 'filename': value['originFilename']
               }),
               _key)));
@@ -145,6 +161,6 @@ class MessageManager {
   get fileApiUrl => _fileApiUrl;
   get fileUploadApi => (_fileApiUrl + '/upload/' + _room);
   get fileDownloadApi => (_fileApiUrl + '/download/' + _room);
-
+  get keyData => _keyData;
   get room => _room;
 }
